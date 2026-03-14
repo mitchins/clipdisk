@@ -1,0 +1,21 @@
+# Swift / SPM
+.build/
+.swiftpm/
+Package.resolved
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+*.xcuserdata
+
+# App artifacts
+ClipboardFolder.app/
+ClipboardFolder-*.zip
+ClipboardFolder-*.dmg
+
+# macOS
+.DS_Store
+._*
+
+# SwiftLint
+.swiftlint.cache
+.vscode/
