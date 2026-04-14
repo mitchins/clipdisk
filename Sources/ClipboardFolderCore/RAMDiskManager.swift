@@ -51,6 +51,7 @@ public final class RAMDiskManager {
         guard result.exitCode == 0 else { return false }
         guard let device = parseHdiutilInfo(result.output) else { return false }
         self.devicePath = device
+        try? setVolumeIcon()
         return true
     }
 
@@ -117,12 +118,19 @@ public final class RAMDiskManager {
 
         let volumeIconPath = mountPoint + "/.VolumeIcon.icns"
         let volumeIconURL = URL(fileURLWithPath: volumeIconPath)
+        if FileManager.default.fileExists(atPath: volumeIconURL.path) {
+            try FileManager.default.removeItem(at: volumeIconURL)
+        }
         try FileManager.default.copyItem(at: iconURL, to: volumeIconURL)
 
         // Set custom icon attribute (requires Xcode Command Line Tools)
         _ = try? processExecutor.run(
             executablePath: "/usr/bin/SetFile",
             arguments: ["-a", "C", mountPoint]
+        )
+        _ = try? processExecutor.run(
+            executablePath: "/usr/bin/touch",
+            arguments: [mountPoint]
         )
     }
 

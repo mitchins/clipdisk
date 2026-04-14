@@ -59,6 +59,10 @@ public final class AppState: ObservableObject {
                 try ramDiskManager.setup()
             }
             isMounted = true
+            refreshVolumeStats()
+            if let firstFile = contentWriter.currentFiles().first {
+                currentFileName = firstFile
+            }
         } catch {
             errorMessage = error.localizedDescription
             return

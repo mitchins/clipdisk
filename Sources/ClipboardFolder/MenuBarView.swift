@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         if let fileName = appState.currentFileName {
@@ -36,6 +37,12 @@ struct MenuBarView: View {
         ))
 
         Divider()
+
+        Button("Settings…") {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            openWindow(id: "settings")
+        }
+        .keyboardShortcut(",")
 
         Button("About Clipboard Folder") {
             showAbout()
