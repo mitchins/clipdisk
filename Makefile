@@ -1,10 +1,13 @@
 APP_NAME     = ClipboardFolder
 BUNDLE_ID    = com.mitchellcurrie.clipboard-folder
-VERSION      = 0.1.0
+VERSION      = 1.0.0
 BUILD_DIR    = .build/release
 APP_BUNDLE   = $(APP_NAME).app
+ZIP_FILE     = $(APP_NAME)-$(VERSION).zip
+NOTARY_PROFILE ?= NotaryTool
+CODESIGN_IDENTITY ?= Developer ID Application: Mitchell Currie
 
-.PHONY: build test app clean run sign notarize package
+.PHONY: build test icon app clean run sign notarize package verify-sign verify-gatekeeper release-check release
 
 build:
 	swift build -c release
@@ -12,7 +15,10 @@ build:
 test:
 	swift test
 
-app: build
+icon:
+	bash Scripts/create-volume-icon.sh
+
+app: build icon
 	@echo "Creating $(APP_BUNDLE)..."
 	rm -rf $(APP_BUNDLE)
 	mkdir -p $(APP_BUNDLE)/Contents/MacOS
@@ -26,22 +32,35 @@ run: app
 	open $(APP_BUNDLE)
 
 sign: app
-	codesign --deep --force --options runtime \
-		--sign "Developer ID Application: Mitchell Currie" \
+	codesign --force --deep --timestamp --options runtime \
+		--entitlements Resources/ClipboardFolder.entitlements \
+		--sign "$(CODESIGN_IDENTITY)" \
 		$(APP_BUNDLE)
 
 notarize: sign
-	ditto -c -k --keepParent $(APP_BUNDLE) $(APP_NAME)-$(VERSION).zip
-	xcrun notarytool submit $(APP_NAME)-$(VERSION).zip \
-		--apple-id "$$APPLE_ID" \
-		--team-id "$$TEAM_ID" \
-		--password "$$AC_PASSWORD" \
+	ditto -c -k --keepParent $(APP_BUNDLE) $(ZIP_FILE)
+	xcrun notarytool submit $(ZIP_FILE) \
+		--keychain-profile "$(NOTARY_PROFILE)" \
 		--wait
 	xcrun stapler staple $(APP_BUNDLE)
 
 package: notarize
-	ditto -c -k --keepParent $(APP_BUNDLE) $(APP_NAME)-$(VERSION).zip
-	@echo "Package ready: $(APP_NAME)-$(VERSION).zip"
+	ditto -c -k --keepParent $(APP_BUNDLE) $(ZIP_FILE)
+	@echo "Package ready: $(ZIP_FILE)"
+
+verify-sign:
+	codesign --verify --deep --strict --verbose=2 $(APP_BUNDLE)
+	codesign -dv --verbose=4 $(APP_BUNDLE)
+
+verify-gatekeeper:
+	spctl --assess --type exec --verbose=4 $(APP_BUNDLE)
+
+release-check: verify-sign verify-gatekeeper
+
+release: package
+	gh release create "v$(VERSION)" "$(ZIP_FILE)" \
+		--title "v$(VERSION)" \
+		--generate-notes
 
 clean:
 	swift package clean

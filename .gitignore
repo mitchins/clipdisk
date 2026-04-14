@@ -11,6 +11,7 @@ DerivedData/
 ClipboardFolder.app/
 ClipboardFolder-*.zip
 ClipboardFolder-*.dmg
+Resources/VolumeIcon.iconset/
 
 # macOS
 .DS_Store
