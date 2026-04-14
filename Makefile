@@ -1,6 +1,6 @@
 APP_NAME     = ClipboardFolder
 BUNDLE_ID    = com.mitchellcurrie.clipboard-folder
-VERSION      = 1.0.0
+VERSION      = 1.0.1
 BUILD_DIR    = .build/release
 APP_BUNDLE   = $(APP_NAME).app
 ZIP_FILE     = $(APP_NAME)-$(VERSION).zip
