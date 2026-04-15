@@ -10,7 +10,8 @@ struct ClipboardFolderApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            if let img = Bundle.main.image(forResource: "MenuBarIcon") {
+            if let img = NSImage(named: "MenuBarIcon")
+                        ?? Bundle.main.image(forResource: "MenuBarIcon") {
                 Image(nsImage: img)
                     .renderingMode(.template)
                     .resizable()
