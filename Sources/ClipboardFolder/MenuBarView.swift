@@ -64,7 +64,12 @@ struct MenuBarView: View {
         NSApplication.shared.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = "Clipboard Folder"
-        alert.informativeText = "Version \(AppState.version)\n\nClipboard contents on a RAM disk.\nhttps://github.com/mitchins/clipboard-fs"
+        alert.informativeText = """
+            Version \(AppState.version)
+
+            Clipboard contents on a RAM disk.
+            https://github.com/mitchins/clipboard-fs
+            """
         alert.alertStyle = .informational
         alert.runModal()
     }

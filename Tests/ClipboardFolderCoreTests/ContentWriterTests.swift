@@ -6,11 +6,11 @@ final class ContentWriterTests: XCTestCase {
     var tempDir: URL!
     var writer: ContentWriter!
 
-    override func setUp() {
-        super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ContentWriterTests-\(UUID().uuidString)")
-        try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         writer = ContentWriter(volumePath: tempDir.path)
     }
 

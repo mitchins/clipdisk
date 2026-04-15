@@ -7,13 +7,21 @@ DMG_FILE     = $(APP_NAME)-$(VERSION).dmg
 NOTARY_PROFILE ?= NotaryTool
 CODESIGN_IDENTITY ?= Developer ID Application: Mitchell Currie
 
-.PHONY: build test icon app clean run sign dmg notarize package verify-sign verify-gatekeeper release-check release
+.PHONY: build test lint setup-hooks icon app clean run sign dmg notarize package verify-sign verify-gatekeeper release-check release
 
 build:
 	swift build -c release
 
 test:
 	swift test
+
+lint:
+	swiftlint lint --reporter emoji
+
+setup-hooks:
+	@echo '#!/bin/sh\n[ -n "$$CI" ] && exit 0\nswiftlint lint --quiet' > .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Pre-commit hook installed (skips on CI)"
 
 icon:
 	bash Scripts/create-volume-icon.sh

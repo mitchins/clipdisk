@@ -8,8 +8,8 @@ public enum ClipboardContent: Equatable {
     public static func == (lhs: ClipboardContent, rhs: ClipboardContent) -> Bool {
         switch (lhs, rhs) {
         case (.empty, .empty): return true
-        case let (.image(d1, n1), .image(d2, n2)): return d1 == d2 && n1 == n2
-        case let (.files(u1), .files(u2)): return u1 == u2
+        case let (.image(lhsData, lhsName), .image(rhsData, rhsName)): return lhsData == rhsData && lhsName == rhsName
+        case let (.files(lhsURLs), .files(rhsURLs)): return lhsURLs == rhsURLs
         default: return false
         }
     }

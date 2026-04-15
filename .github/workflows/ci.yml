@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Runs on cheap Linux — no build needed, just source analysis
+  # Cheap Linux jobs — no build required, source analysis only
   lint:
     name: SwiftLint
     runs-on: ubuntu-latest
@@ -24,7 +24,6 @@ jobs:
             ghcr.io/realm/swiftlint:latest \
             swiftlint lint --reporter github-actions-logging
 
-  # Runs on cheap Linux — SonarQube only needs source files
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest
@@ -38,12 +37,27 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # macOS runner — 10x cost, so only runs on pushes to main.
+  # macOS — automatic on merge to main, requires admin approval on PRs.
   # AppKit dependency blocks Linux compilation; revisit if core is ever split out.
+  #
+  # To enable on a PR: go to Actions → this run → approve the "macos-tests" environment.
+  # Set up: Settings → Environments → macos-tests → add yourself as required reviewer.
   test:
     name: Test (macOS)
     runs-on: macos-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Unit tests
+        run: swift test --filter ClipboardFolderCoreTests
+
+  test-pr:
+    name: Test (macOS) [requires approval]
+    runs-on: macos-latest
+    if: github.event_name == 'pull_request'
+    environment: macos-tests
     steps:
       - uses: actions/checkout@v4
       - name: Build

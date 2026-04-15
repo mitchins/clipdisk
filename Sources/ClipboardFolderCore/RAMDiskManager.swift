@@ -170,8 +170,8 @@ public final class RAMDiskManager {
             guard let entities = image["system-entities"] as? [[String: Any]] else { continue }
 
             for entity in entities {
-                if let mp = entity["mount-point"] as? String,
-                   mp == self.mountPoint,
+                if let mountPath = entity["mount-point"] as? String,
+                   mountPath == self.mountPoint,
                    let devEntry = entity["dev-entry"] as? String {
                     return devEntry
                 }
