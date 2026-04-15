@@ -90,11 +90,6 @@ jobs:
           path: .
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
-        with:
-          args: >
-            ${{ needs.test.result == 'success'
-              && '-Dsonar.swift.coverage.reportPaths=coverage.lcov'
-              || '' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
