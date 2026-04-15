@@ -18,7 +18,8 @@ let package = Package(
         .executableTarget(
             name: "ClipboardFolder",
             dependencies: ["ClipboardFolderUI"],
-            path: "Sources/ClipboardFolder"
+            path: "Sources/ClipboardFolder",
+            resources: [.process("Assets.xcassets")]
         ),
         .testTarget(
             name: "ClipboardFolderCoreTests",
