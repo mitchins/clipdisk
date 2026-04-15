@@ -11,19 +11,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: macos-14
+  # Runs on cheap Linux — no build needed, just source analysis
+  lint:
+    name: SwiftLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SwiftLint
+        run: |
+          docker run --rm \
+            -v "$(pwd):/work" -w /work \
+            ghcr.io/realm/swiftlint:latest \
+            swiftlint lint --reporter github-actions-logging
+
+  # Runs on cheap Linux — SonarQube only needs source files
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Unit tests
-        run: swift test --filter ClipboardFolderCoreTests 2>&1 | tee test-output.txt
-
-      - name: SonarCloud scan
-        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: SonarSource/sonarqube-scan-action@v5
+          fetch-depth: 0  # required for accurate blame/history analysis
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # macOS runner — 10x cost, so only runs on pushes to main.
+  # AppKit dependency blocks Linux compilation; revisit if core is ever split out.
+  test:
+    name: Test (macOS)
+    runs-on: macos-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+      - name: Unit tests
+        run: swift test --filter ClipboardFolderCoreTests

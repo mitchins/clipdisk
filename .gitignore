@@ -9,8 +9,8 @@ DerivedData/
 
 # App artifacts
 ClipboardFolder.app/
-ClipboardFolder-*.zip
 ClipboardFolder-*.dmg
+ClipboardFolder-*.zip
 Resources/VolumeIcon.iconset/
 
 # macOS
