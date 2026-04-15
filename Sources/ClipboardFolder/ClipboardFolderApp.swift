@@ -1,3 +1,4 @@
+import ClipboardFolderUI
 import SwiftUI
 
 @main

@@ -10,9 +10,14 @@ let package = Package(
             name: "ClipboardFolderCore",
             path: "Sources/ClipboardFolderCore"
         ),
+        .target(
+            name: "ClipboardFolderUI",
+            dependencies: ["ClipboardFolderCore"],
+            path: "Sources/ClipboardFolderUI"
+        ),
         .executableTarget(
             name: "ClipboardFolder",
-            dependencies: ["ClipboardFolderCore"],
+            dependencies: ["ClipboardFolderUI"],
             path: "Sources/ClipboardFolder"
         ),
         .testTarget(
@@ -24,6 +29,11 @@ let package = Package(
             name: "ClipboardFolderIntegrationTests",
             dependencies: ["ClipboardFolderCore"],
             path: "Tests/ClipboardFolderIntegrationTests"
+        ),
+        .testTarget(
+            name: "ClipboardFolderUITests",
+            dependencies: ["ClipboardFolderUI"],
+            path: "Tests/ClipboardFolderUITests"
         ),
     ]
 )

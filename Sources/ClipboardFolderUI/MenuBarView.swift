@@ -1,10 +1,12 @@
 import SwiftUI
 
-struct MenuBarView: View {
+public struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         if let fileName = appState.currentFileName {
             Text(fileName)
                 .font(.caption)

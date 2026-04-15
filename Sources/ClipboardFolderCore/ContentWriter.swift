@@ -1,5 +1,13 @@
 import Foundation
 
+public protocol ContentWriting {
+    func currentFiles() -> [String]
+    func usedBytes() -> Int64
+    func clear() throws
+    func writeImage(_ data: Data, filename: String) throws
+    func copyFiles(_ urls: [URL]) throws
+}
+
 public enum ContentWriterError: Error, LocalizedError {
     case volumeNotAvailable
     case writeFailed(String)
@@ -12,7 +20,7 @@ public enum ContentWriterError: Error, LocalizedError {
     }
 }
 
-public final class ContentWriter {
+public final class ContentWriter: ContentWriting {
     public let volumePath: String
     private let fileManager: FileManager
 

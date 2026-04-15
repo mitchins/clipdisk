@@ -18,7 +18,7 @@ public final class AppState: ObservableObject {
 
     let ramDiskManager: RAMDiskManager
     let clipboardMonitor: ClipboardMonitor
-    let contentWriter: ContentWriter
+    let contentWriter: any ContentWriting
 
     private var terminationObserver: Any?
 
@@ -42,6 +42,14 @@ public final class AppState: ObservableObject {
         Task { @MainActor in
             self.startup()
         }
+    }
+
+    /// Test-only initializer — injects a `ContentWriting` stub, skips startup and system services.
+    init(contentWriter: any ContentWriting) {
+        self.ramDiskManager = RAMDiskManager()
+        self.clipboardMonitor = ClipboardMonitor()
+        self.contentWriter = contentWriter
+        self.launchAtLogin = false
     }
 
     deinit {
@@ -121,7 +129,7 @@ public final class AppState: ObservableObject {
 
     // MARK: - Content handling
 
-    private func handleContent(_ content: ClipboardContent) {
+    func handleContent(_ content: ClipboardContent) {
         do {
             switch content {
             case .image(let data, let name):

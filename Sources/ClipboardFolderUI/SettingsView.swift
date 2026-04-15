@@ -1,10 +1,12 @@
 import SwiftUI
 
-struct SettingsView: View {
+public struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var updater = UpdateChecker()
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         VStack(spacing: 0) {
             // App identity
             VStack(spacing: 8) {
