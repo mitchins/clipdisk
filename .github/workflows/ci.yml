@@ -14,7 +14,6 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # Cheap Linux jobs — no build required, source analysis only
   lint:
     name: SwiftLint
     runs-on: ubuntu-latest
@@ -27,35 +26,34 @@ jobs:
             ghcr.io/realm/swiftlint:latest \
             swiftlint lint --reporter github-actions-logging
 
-  sonarqube:
-    name: SonarQube
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # required for accurate blame/history analysis
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # macOS — automatic on merge to main, requires admin approval on PRs.
-  # AppKit dependency blocks Linux compilation; revisit if core is ever split out.
-  #
-  # To enable on a PR: go to Actions → this run → approve the "macos-tests" environment.
-  # Set up: Settings → Environments → macos-tests → add yourself as required reviewer.
+  # Runs on main push only — generates lcov coverage artifact for Sonar
   test:
     name: Test (macOS)
     runs-on: macos-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build
-      - name: Unit tests
-        run: swift test --filter ClipboardFolderCoreTests
+      - name: Test with coverage
+        run: swift test --enable-code-coverage --filter ClipboardFolderCoreTests
+      - name: Generate lcov report
+        run: |
+          PROFDATA=$(find .build -name "default.profdata" | head -1)
+          TESTBIN=$(find .build -path "*.xctest/Contents/MacOS/ClipboardFolderPackageTests" | head -1)
+          xcrun llvm-cov export \
+            -format=lcov \
+            -instr-profile="$PROFDATA" \
+            "$TESTBIN" \
+            --ignore-filename-regex='\.build|Tests' \
+            > coverage.lcov
+          echo "Lines in report: $(wc -l < coverage.lcov)"
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.lcov
+          retention-days: 1
 
+  # PR variant — approval-gated, no coverage needed
   test-pr:
     name: Test (macOS) [requires approval]
     runs-on: macos-latest
@@ -67,3 +65,35 @@ jobs:
         run: swift build
       - name: Unit tests
         run: swift test --filter ClipboardFolderCoreTests
+
+  # Runs on both push and PR:
+  #   push to main  → waits for lint + test, scans with coverage
+  #   PR            → waits for lint only (test is skipped), static scan only
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: |
+      always() &&
+      needs.lint.result == 'success' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download coverage artifact (main only)
+        if: needs.test.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+          path: .
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          args: >
+            ${{ needs.test.result == 'success'
+              && '-Dsonar.swift.coverage.reportPaths=coverage.lcov'
+              || '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
