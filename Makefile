@@ -33,6 +33,7 @@ app: build icon
 	mkdir -p $(APP_BUNDLE)/Contents/Resources
 	cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/
+	cp Resources/AppIcon.icns  $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/VolumeIcon.icns $(APP_BUNDLE)/Contents/Resources/
 	@echo "Done: $(APP_BUNDLE)"
 

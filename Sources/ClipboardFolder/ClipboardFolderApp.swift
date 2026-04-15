@@ -1,3 +1,4 @@
+import AppKit
 import ClipboardFolderUI
 import SwiftUI
 
@@ -10,9 +11,9 @@ struct ClipboardFolderApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            Image(systemName: appState.currentFileName != nil
-                ? "doc.on.clipboard.fill"
-                : "doc.on.clipboard")
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 18, height: 18)
         }
 
         Window("Settings", id: "settings") {

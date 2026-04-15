@@ -23,6 +23,6 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>CFBundleIconFile</key>
-    <string>VolumeIcon</string>
+    <string>AppIcon</string>
 </dict>
 </plist>
