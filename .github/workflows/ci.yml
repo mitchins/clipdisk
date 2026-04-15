@@ -45,6 +45,8 @@ jobs:
             "$TESTBIN" \
             --ignore-filename-regex='\.build|Tests' \
             > coverage.lcov
+          # Strip absolute runner paths so SonarQube can match files on ubuntu
+          sed -i '' "s|$(pwd)/||g" coverage.lcov
           echo "Lines in report: $(wc -l < coverage.lcov)"
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
