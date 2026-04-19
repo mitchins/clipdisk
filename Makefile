@@ -1,8 +1,9 @@
-APP_NAME     = ClipboardFolder
-BUNDLE_ID    = com.mitchellcurrie.clipboard-folder
-VERSION      = 1.1
-BUILD_DIR    = .build/release
-APP_BUNDLE   = $(APP_NAME).app
+APP_NAME        = ClipboardFolder
+EXECUTABLE_NAME = ClipDisk
+BUNDLE_ID       = com.mitchellcurrie.clipboard-folder
+VERSION         = 1.1.1
+BUILD_DIR       = .build/release
+APP_BUNDLE      = $(APP_NAME).app
 DMG_FILE     = $(APP_NAME)-$(VERSION).dmg
 OWNER_REPO   ?= mitchins/clipdisk
 HOMEBREW_TAP ?= mitchins/homebrew-tap
@@ -45,8 +46,14 @@ app: build icon
 	rm -rf $(APP_BUNDLE)
 	mkdir -p $(APP_BUNDLE)/Contents/MacOS
 	mkdir -p $(APP_BUNDLE)/Contents/Resources
-	cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/
+	cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/$(EXECUTABLE_NAME)
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/
+	/usr/libexec/PlistBuddy \
+		-c "Set :CFBundleExecutable $(EXECUTABLE_NAME)" \
+		-c "Set :CFBundleIdentifier $(BUNDLE_ID)" \
+		-c "Set :CFBundleName $(APP_NAME)" \
+		-c "Set :CFBundleDevelopmentRegion en" \
+		"$(APP_BUNDLE)/Contents/Info.plist"
 	cp Resources/AppIcon.icns    $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/VolumeIcon.icns $(APP_BUNDLE)/Contents/Resources/
 	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
