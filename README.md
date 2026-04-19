@@ -45,23 +45,11 @@ The menu bar dropdown shows what's on the volume and lets you open Finder, clear
 
 ## Finder Appearance (Optional)
 
-You can make `/Volumes/Clipboard` look more like a polished DMG window (custom icon layout, background artwork, and helper text embedded in an image).
+`/Volumes/Clipboard` is styled out of the box with Finder metadata and background artwork so it behaves more like a polished DMG window when you open it in Finder.
 
-Add a Finder template under `Resources/FinderTemplate`:
+The app seeds the bundled Finder template automatically on mount, so there is nothing to configure for normal use.
 
-- `Resources/FinderTemplate/.DS_Store`
-- `Resources/FinderTemplate/.background/instructions.png` (optional)
-
-On mount/recovery, clipdisk copies these files onto the RAM disk before you browse it.
-
-Template creation flow:
-
-1. Manually create a reference volume named `Clipboard`
-2. Arrange Finder icon view/background exactly how you want
-3. Copy out the generated `.DS_Store` into `Resources/FinderTemplate`
-4. Rebuild the app with `make app`
-
-If no template files are present, behavior is unchanged.
+If the template assets are ever missing from the bundle, the app still works normally.
 
 ## License
 
