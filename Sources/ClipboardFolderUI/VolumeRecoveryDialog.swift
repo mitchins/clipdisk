@@ -5,8 +5,8 @@ import SwiftUI
 private let logger = Logger(subsystem: "com.mitchellcurrie.ClipboardFolder", category: "VolumeRecovery")
 
 extension Notification.Name {
-    static let clipboardFolderVolumeRecoveryRemountSucceeded = Notification.Name(
-        "ClipboardFolderVolumeRecoveryRemountSucceeded"
+    static let clipboardVolumeRecoveryRemountSucceeded = Notification.Name(
+        "ClipboardVolumeRecoveryRemountSucceeded"
     )
 }
 
@@ -55,7 +55,7 @@ final class VolumeRecoveryDialogModel: ObservableObject {
             do {
                 try await remountAction()
                 NotificationCenter.default.post(
-                    name: .clipboardFolderVolumeRecoveryRemountSucceeded,
+                    name: .clipboardVolumeRecoveryRemountSucceeded,
                     object: nil
                 )
             } catch {
@@ -147,9 +147,8 @@ struct VolumeRecoveryDialogView: View {
             return "Remount the Clipboard volume to continue."
         }
 
-        if trimmedReason.caseInsensitiveCompare("Clipboard volume unavailable.") == .orderedSame
-            || trimmedReason.caseInsensitiveCompare("Clipboard volume unavailable") == .orderedSame
-        {
+        if trimmedReason.caseInsensitiveCompare("Clipboard volume unavailable.") == .orderedSame ||
+            trimmedReason.caseInsensitiveCompare("Clipboard volume unavailable") == .orderedSame {
             return "Remount the Clipboard volume to continue."
         }
 

@@ -278,7 +278,7 @@ public final class AppState: ObservableObject {
 
     private func installVolumeRecoverySuccessObserver() {
         volumeRecoverySuccessObserver = NotificationCenter.default.addObserver(
-            forName: .clipboardFolderVolumeRecoveryRemountSucceeded,
+            forName: .clipboardVolumeRecoveryRemountSucceeded,
             object: nil,
             queue: nil
         ) { [weak self] _ in

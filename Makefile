@@ -51,7 +51,7 @@ app: build icon
 	/usr/libexec/PlistBuddy \
 		-c "Set :CFBundleExecutable $(EXECUTABLE_NAME)" \
 		-c "Set :CFBundleIdentifier $(BUNDLE_ID)" \
-		-c "Set :CFBundleName $(APP_NAME)" \
+		-c "Set :CFBundleName ClipDisk" \
 		-c "Set :CFBundleDevelopmentRegion en" \
 		"$(APP_BUNDLE)/Contents/Info.plist"
 	cp Resources/AppIcon.icns    $(APP_BUNDLE)/Contents/Resources/

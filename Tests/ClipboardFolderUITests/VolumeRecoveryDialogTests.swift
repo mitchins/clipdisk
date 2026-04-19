@@ -9,7 +9,7 @@ final class VolumeRecoveryDialogTests: XCTestCase {
         let successNotification = expectation(description: "success notification")
 
         let observer = NotificationCenter.default.addObserver(
-            forName: .clipboardFolderVolumeRecoveryRemountSucceeded,
+            forName: .clipboardVolumeRecoveryRemountSucceeded,
             object: nil,
             queue: nil
         ) { _ in
