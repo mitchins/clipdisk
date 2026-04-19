@@ -1,5 +1,8 @@
 name: ClipboardFolder
 options:
+  fileTypes:
+    "icon":
+      file: true
   bundleIdPrefix: com.mitchellcurrie
 configs:
   Debug: debug
@@ -15,7 +18,9 @@ targets:
     sources:
       - path: Sources/ClipboardFolder
     resources:
-      - Sources/ClipboardFolder/Assets.xcassets
+      - path: Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon.png
+      - path: Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@2x.png
+      - path: Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@3x.png
     info:
       path: Resources/Info.plist
     entitlements:

@@ -13,6 +13,19 @@ final class MockProcessExecutor: ProcessExecuting {
 
     func run(executablePath: String, arguments: [String]) throws -> ProcessResult {
         commands.append((path: executablePath, args: arguments))
+        return dequeueResult()
+    }
+
+    func run(
+        executablePath: String,
+        arguments: [String],
+        timeout: TimeInterval
+    ) throws -> ProcessResult {
+        commands.append((path: executablePath, args: arguments))
+        return dequeueResult()
+    }
+
+    private func dequeueResult() -> ProcessResult {
         guard callIndex < results.count else {
             return ProcessResult(exitCode: 1, output: "", errorOutput: "No mock result configured")
         }
@@ -203,6 +216,20 @@ final class RAMDiskManagerTests: XCTestCase {
 
         XCTAssertFalse(recovered)
         XCTAssertNil(manager.devicePath)
+    }
+
+    func testSetupFreshRecreatesVolumeAfterExistingPath() throws {
+        let executor = MockProcessExecutor()
+        executor.enqueue(ProcessResult(exitCode: 0, output: "/dev/disk42", errorOutput: ""))
+        executor.enqueue(ProcessResult(exitCode: 0, output: "OK", errorOutput: ""))
+        executor.enqueue(ProcessResult(exitCode: 0, output: "/dev/disk43", errorOutput: ""))
+        executor.enqueue(ProcessResult(exitCode: 0, output: "OK", errorOutput: ""))
+
+        let manager = RAMDiskManager(processExecutor: executor)
+        try manager.setup()
+        try manager.setupFresh()
+
+        XCTAssertEqual(manager.devicePath, "/dev/disk43")
     }
 
     func testRecoverReturnsFalseWhenHdiutilFails() throws {

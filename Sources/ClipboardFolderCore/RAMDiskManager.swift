@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "com.mitchellcurrie.ClipboardFolder", category: "RAMDisk")
 
 public enum RAMDiskError: Error, LocalizedError {
     case creationFailed(String)
@@ -19,6 +22,14 @@ public enum RAMDiskError: Error, LocalizedError {
 }
 
 public final class RAMDiskManager {
+    private enum CommandTimeouts {
+        static let recovery: TimeInterval = 10
+        static let creation: TimeInterval = 15
+        static let formatting: TimeInterval = 20
+        static let teardown: TimeInterval = 10
+        static let utility: TimeInterval = 5
+    }
+
     public let volumeName: String
     public let sizeInMB: Int
     public var mountPoint: String { "/Volumes/\(volumeName)" }
@@ -40,17 +51,47 @@ public final class RAMDiskManager {
         self.processExecutor = processExecutor
     }
 
+    /// Clears any cached device path before mounting a fresh volume.
+    public func setupFresh() throws {
+        devicePath = nil
+        try setup()
+    }
+
+    /// Waits briefly for the mounted volume to become visible in /Volumes.
+    public func waitForMount(timeout: TimeInterval = 3.0, pollInterval: TimeInterval = 0.1) -> Bool {
+        guard timeout > 0 else { return isMounted }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if isMounted {
+                return true
+            }
+            Thread.sleep(forTimeInterval: pollInterval)
+        }
+
+        return isMounted
+    }
+
     /// Attempts to find and reattach to an existing RAM disk with our volume name.
     /// Returns true if an existing disk was found and adopted.
     @discardableResult
     public func recoverExistingDisk() throws -> Bool {
-        let result = try processExecutor.run(
+        let result = try runCommand(
+            stage: "recover volume",
             executablePath: "/usr/bin/hdiutil",
-            arguments: ["info", "-plist"]
+            arguments: ["info", "-plist"],
+            timeout: CommandTimeouts.recovery
         )
-        guard result.exitCode == 0 else { return false }
-        guard let device = parseHdiutilInfo(result.output) else { return false }
+        guard result.exitCode == 0 else {
+            devicePath = nil
+            return false
+        }
+        guard let device = parseHdiutilInfo(result.output) else {
+            devicePath = nil
+            return false
+        }
         self.devicePath = device
+        logger.info("Recovered clipboard volume at \(device)")
         try? setVolumeIcon()
         try? seedFinderTemplateIfAvailable()
         return true
@@ -62,10 +103,17 @@ public final class RAMDiskManager {
 
         let sectors = sizeInMB * 2048 // 512 bytes per sector
 
-        let createResult = try processExecutor.run(
-            executablePath: "/usr/bin/hdiutil",
-            arguments: ["attach", "-nomount", "ram://\(sectors)"]
-        )
+        let createResult: ProcessResult
+        do {
+            createResult = try runCommand(
+                stage: "create ram disk",
+                executablePath: "/usr/bin/hdiutil",
+                arguments: ["attach", "-nomount", "ram://\(sectors)"],
+                timeout: CommandTimeouts.creation
+            )
+        } catch {
+            throw RAMDiskError.creationFailed(error.localizedDescription)
+        }
         guard createResult.exitCode == 0 else {
             throw RAMDiskError.creationFailed(createResult.errorOutput)
         }
@@ -75,20 +123,34 @@ public final class RAMDiskManager {
             throw RAMDiskError.creationFailed("No device path returned")
         }
 
-        let formatResult = try processExecutor.run(
-            executablePath: "/usr/sbin/diskutil",
-            arguments: ["eraseDisk", "HFS+", volumeName, device]
-        )
+        let formatResult: ProcessResult
+        do {
+            formatResult = try runCommand(
+                stage: "format ram disk",
+                executablePath: "/usr/sbin/diskutil",
+                arguments: ["eraseDisk", "HFS+", volumeName, device],
+                timeout: CommandTimeouts.formatting
+            )
+        } catch {
+            _ = try? processExecutor.run(
+                executablePath: "/usr/bin/hdiutil",
+                arguments: ["detach", device],
+                timeout: CommandTimeouts.teardown
+            )
+            throw RAMDiskError.formatFailed(error.localizedDescription)
+        }
         guard formatResult.exitCode == 0 else {
             // Clean up the unformatted disk
             _ = try? processExecutor.run(
                 executablePath: "/usr/bin/hdiutil",
-                arguments: ["detach", device]
+                arguments: ["detach", device],
+                timeout: CommandTimeouts.teardown
             )
             throw RAMDiskError.formatFailed(formatResult.errorOutput)
         }
 
         self.devicePath = device
+        logger.info("Mounted new clipboard volume at \(device)")
 
         // Set custom volume icon if available
         try? setVolumeIcon()
@@ -128,11 +190,13 @@ public final class RAMDiskManager {
         // Set custom icon attribute (requires Xcode Command Line Tools)
         _ = try? processExecutor.run(
             executablePath: "/usr/bin/SetFile",
-            arguments: ["-a", "C", mountPoint]
+            arguments: ["-a", "C", mountPoint],
+            timeout: CommandTimeouts.utility
         )
         _ = try? processExecutor.run(
             executablePath: "/usr/bin/touch",
-            arguments: [mountPoint]
+            arguments: [mountPoint],
+            timeout: CommandTimeouts.utility
         )
     }
 
@@ -163,7 +227,8 @@ public final class RAMDiskManager {
             try fileManager.copyItem(at: dsStoreURL, to: targetDSStoreURL)
             _ = try? processExecutor.run(
                 executablePath: "/usr/bin/touch",
-                arguments: [mountPoint]
+                arguments: [mountPoint],
+                timeout: CommandTimeouts.utility
             )
         }
 
@@ -213,10 +278,17 @@ public final class RAMDiskManager {
     public func teardown() throws {
         guard let device = devicePath else { throw RAMDiskError.notMounted }
 
-        let result = try processExecutor.run(
-            executablePath: "/usr/bin/hdiutil",
-            arguments: ["detach", device]
-        )
+        let result: ProcessResult
+        do {
+            result = try runCommand(
+                stage: "detach clipboard volume",
+                executablePath: "/usr/bin/hdiutil",
+                arguments: ["detach", device],
+                timeout: CommandTimeouts.teardown
+            )
+        } catch {
+            throw RAMDiskError.detachFailed(error.localizedDescription)
+        }
         guard result.exitCode == 0 else {
             throw RAMDiskError.detachFailed(result.errorOutput)
         }
@@ -254,5 +326,31 @@ public final class RAMDiskManager {
         }
 
         return nil
+    }
+}
+
+private extension RAMDiskManager {
+    func runCommand(
+        stage: String,
+        executablePath: String,
+        arguments: [String],
+        timeout: TimeInterval
+    ) throws -> ProcessResult {
+        do {
+            let result = try processExecutor.run(
+                executablePath: executablePath,
+                arguments: arguments,
+                timeout: timeout
+            )
+
+            if result.exitCode != 0 {
+                logger.warning("\(stage) exited with \(result.exitCode): \(result.errorOutput)")
+            }
+
+            return result
+        } catch {
+            logger.error("\(stage) failed: \(error.localizedDescription)")
+            throw error
+        }
     }
 }

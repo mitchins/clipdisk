@@ -1,7 +1,39 @@
 import AppKit
-import ClipboardFolderCore
+@preconcurrency import ClipboardFolderCore
+import OSLog
 import ServiceManagement
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.mitchellcurrie.ClipboardFolder", category: "AppState")
+
+private struct VolumeRecoveryRemountWork: @unchecked Sendable {
+    let ramDiskManager: RAMDiskManager
+
+    func perform() async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async { [ramDiskManager] in
+                do {
+                    let recovered = (try? ramDiskManager.recoverExistingDisk()) ?? false
+                    if !recovered {
+                        logger.info("Recovering existing volume failed, creating a fresh one")
+                        try ramDiskManager.setupFresh()
+                    }
+
+                    guard ramDiskManager.waitForMount() else {
+                        throw RAMDiskError.creationFailed(
+                            "Clipboard volume did not mount at \(ramDiskManager.mountPoint)"
+                        )
+                    }
+
+                    continuation.resume()
+                } catch {
+                    logger.error("Remount failed: \(error.localizedDescription)")
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}
 
 @MainActor
 public final class AppState: ObservableObject {
@@ -37,6 +69,9 @@ public final class AppState: ObservableObject {
     let contentWriter: any ContentWriting
 
     private var terminationObserver: Any?
+    private var volumeRecoverySuccessObserver: Any?
+    private var volumeHealthTimer: Timer?
+    private var volumeRecoveryDialogController: VolumeRecoveryDialogController?
 
     public init() {
         let rdm = RAMDiskManager()
@@ -55,6 +90,8 @@ public final class AppState: ObservableObject {
             }
         }
 
+        installVolumeRecoverySuccessObserver()
+
         Task { @MainActor in
             self.startup()
         }
@@ -66,10 +103,15 @@ public final class AppState: ObservableObject {
         self.clipboardMonitor = ClipboardMonitor()
         self.contentWriter = contentWriter
         self.launchAtLogin = false
+
+        installVolumeRecoverySuccessObserver()
     }
 
     deinit {
         if let observer = terminationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = volumeRecoverySuccessObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -82,22 +124,22 @@ public final class AppState: ObservableObject {
             if !recovered {
                 try ramDiskManager.setup()
             }
-            isMounted = true
-            refreshVolumeStats()
-            if let firstFile = contentWriter.currentFiles().first {
-                currentFileName = firstFile
-            }
+            activateMountedVolume()
         } catch {
-            errorMessage = error.localizedDescription
+            presentVolumeRecoveryDialog(reason: error.localizedDescription)
             return
         }
 
         clipboardMonitor.delegate = self
         clipboardMonitor.start()
+        startVolumeHealthMonitoring()
     }
 
     func shutdown() {
         clipboardMonitor.stop()
+        stopVolumeHealthMonitoring()
+        volumeRecoveryDialogController?.close()
+        volumeRecoveryDialogController = nil
         try? ramDiskManager.teardown()
         isMounted = false
     }
@@ -120,7 +162,7 @@ public final class AppState: ObservableObject {
             currentFileName = nil
             refreshVolumeStats()
         } catch {
-            errorMessage = error.localizedDescription
+            handleVolumeFailure(error)
         }
     }
 
@@ -161,8 +203,107 @@ public final class AppState: ObservableObject {
             errorMessage = nil
             refreshVolumeStats()
         } catch {
-            errorMessage = error.localizedDescription
+            handleVolumeFailure(error)
         }
+    }
+
+    // MARK: - Volume recovery
+
+    private func activateMountedVolume() {
+        isMounted = true
+        errorMessage = nil
+        refreshVolumeStats()
+        currentFileName = contentWriter.currentFiles().first
+    }
+
+    private func handleVolumeFailure(_ error: Error) {
+        errorMessage = error.localizedDescription
+        if shouldPromptForVolumeRecovery(error) {
+            presentVolumeRecoveryDialog(reason: error.localizedDescription)
+        }
+    }
+
+    private func shouldPromptForVolumeRecovery(_ error: Error) -> Bool {
+        isMounted && !ramDiskManager.isMounted
+    }
+
+    private func startVolumeHealthMonitoring() {
+        stopVolumeHealthMonitoring()
+        volumeHealthTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkVolumeHealth()
+            }
+        }
+    }
+
+    private func stopVolumeHealthMonitoring() {
+        volumeHealthTimer?.invalidate()
+        volumeHealthTimer = nil
+    }
+
+    private func checkVolumeHealth() {
+        guard volumeRecoveryDialogController == nil else { return }
+        guard isMounted else { return }
+        guard !ramDiskManager.isMounted else { return }
+
+        presentVolumeRecoveryDialog(reason: "Clipboard volume unavailable.")
+    }
+
+    private func presentVolumeRecoveryDialog(reason: String) {
+        guard volumeRecoveryDialogController == nil else { return }
+
+        logger.warning("Presenting recovery dialog: \(reason)")
+        clipboardMonitor.stop()
+        stopVolumeHealthMonitoring()
+        isMounted = false
+        errorMessage = reason
+
+        let remountWork = VolumeRecoveryRemountWork(ramDiskManager: ramDiskManager)
+
+        let controller = VolumeRecoveryDialogController(
+            reason: reason,
+            remountAction: {
+                try await remountWork.perform()
+            },
+            quitAction: { [weak self] in
+                self?.ejectAndQuit()
+            }
+        )
+        controller.onDidClose = { [weak self] in
+            self?.volumeRecoveryDialogController = nil
+        }
+        volumeRecoveryDialogController = controller
+        controller.present()
+    }
+
+    private func installVolumeRecoverySuccessObserver() {
+        volumeRecoverySuccessObserver = NotificationCenter.default.addObserver(
+            forName: .clipboardFolderVolumeRecoveryRemountSucceeded,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            // Use RunLoop.main.perform so the block fires in NSModalPanelRunLoopMode.
+            // DispatchQueue.main only drains in kCFRunLoopCommonModes, which does NOT
+            // include NSModalPanelRunLoopMode, so queue: .main never executes while
+            // NSApp.runModal is holding the event loop.
+            RunLoop.main.perform(inModes: [.modalPanel, .default]) {
+                MainActor.assumeIsolated {
+                    self?.handleVolumeRecoveryRemountSucceeded()
+                }
+            }
+        }
+    }
+
+    private func handleVolumeRecoveryRemountSucceeded() {
+        volumeRecoveryDialogController?.close()
+        finishRecoveredVolume()
+    }
+
+    private func finishRecoveredVolume() {
+        activateMountedVolume()
+        clipboardMonitor.delegate = self
+        clipboardMonitor.start()
+        startVolumeHealthMonitoring()
     }
 }
 

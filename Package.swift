@@ -19,7 +19,12 @@ let package = Package(
             name: "ClipboardFolder",
             dependencies: ["ClipboardFolderUI"],
             path: "Sources/ClipboardFolder",
-            resources: [.process("Assets.xcassets")]
+            resources: [
+                .process("Assets.xcassets"),
+                .copy("Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon.png"),
+                .copy("Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@2x.png"),
+                .copy("Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@3x.png"),
+            ]
         ),
         .testTarget(
             name: "ClipboardFolderCoreTests",
