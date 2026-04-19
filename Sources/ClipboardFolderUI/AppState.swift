@@ -22,10 +22,10 @@ public final class AppState: ObservableObject {
 
     static var versionDisplay: String {
         if version != "dev" {
-            if let b = build, !b.isEmpty {
+            if let b = build, !b.isEmpty, b != version {
                 return "\(version) (\(b))"
             } else {
-                return "\(version) (dev)"
+                return version
             }
         } else {
             return "dev"
