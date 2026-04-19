@@ -19,7 +19,18 @@ test:
 	swift test
 
 lint:
-	swiftlint lint --reporter emoji
+	@set -e; \
+	if command -v swiftlint >/dev/null 2>&1; then \
+		swiftlint lint --reporter emoji; \
+	elif command -v docker >/dev/null 2>&1; then \
+		docker run --rm \
+			-v "$(CURDIR):/work" -w /work \
+			ghcr.io/realm/swiftlint:latest \
+			swiftlint lint --reporter emoji; \
+	else \
+		echo "SwiftLint requires either swiftlint or Docker"; \
+		exit 1; \
+	fi
 
 setup-hooks:
 	@echo '#!/bin/sh\n[ -n "$$CI" ] && exit 0\nswiftlint lint --quiet' > .git/hooks/pre-commit
@@ -38,9 +49,7 @@ app: build icon
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/
 	cp Resources/AppIcon.icns    $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/VolumeIcon.icns $(APP_BUNDLE)/Contents/Resources/
-	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
-	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@2x.png $(APP_BUNDLE)/Contents/Resources/
-	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@3x.png $(APP_BUNDLE)/Contents/Resources/
+	cp Resources/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
 	@if [ -d Resources/FinderTemplate ]; then cp -R Resources/FinderTemplate $(APP_BUNDLE)/Contents/Resources/; fi
 	@echo "Done: $(APP_BUNDLE)"
 
@@ -78,7 +87,8 @@ verify-gatekeeper:
 
 release-check: verify-sign verify-gatekeeper
 
-release: package
+release: lint
+	$(MAKE) package
 	gh release create "v$(VERSION)" "$(DMG_FILE)" \
 		--title "v$(VERSION)" \
 		--generate-notes

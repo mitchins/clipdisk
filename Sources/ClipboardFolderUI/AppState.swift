@@ -22,8 +22,8 @@ public final class AppState: ObservableObject {
 
     static var versionDisplay: String {
         if version != "dev" {
-            if let b = build, !b.isEmpty, b != version {
-                return "\(version) (\(b))"
+            if let buildVersion = build, !buildVersion.isEmpty, buildVersion != version {
+                return "\(version) (\(buildVersion))"
             } else {
                 return version
             }
@@ -177,4 +177,3 @@ extension AppState: ClipboardMonitorDelegate {
         }
     }
 }
-
