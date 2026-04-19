@@ -61,12 +61,12 @@ cask "$CASK_NAME" do
   version "$VERSION"
   sha256 "$SHA256"
 
-  url "https://github.com/$OWNER_REPO/releases/download/v#{version}/ClipboardFolder-#{version}.dmg"
+  url "https://github.com/$OWNER_REPO/releases/download/v#{version}/ClipDisk-#{version}.dmg"
   name "Clipdisk"
   desc "Clipboard contents on a RAM disk for quick file uploads"
   homepage "https://github.com/$OWNER_REPO"
 
-  app "ClipboardFolder.app"
+  app "ClipDisk.app"
 end
 EOF
 
