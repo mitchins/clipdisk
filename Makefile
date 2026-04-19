@@ -1,10 +1,10 @@
 APP_NAME        = ClipboardFolder
 EXECUTABLE_NAME = ClipDisk
 BUNDLE_ID       = com.mitchellcurrie.clipboard-folder
-VERSION         = 1.1.2
+VERSION         = 1.1.3
 BUILD_DIR       = .build/release
-APP_BUNDLE      = $(APP_NAME).app
-DMG_FILE     = $(APP_NAME)-$(VERSION).dmg
+APP_BUNDLE      = $(EXECUTABLE_NAME).app
+DMG_FILE     = $(EXECUTABLE_NAME)-$(VERSION).dmg
 OWNER_REPO   ?= mitchins/clipdisk
 HOMEBREW_TAP ?= mitchins/homebrew-tap
 HOMEBREW_CASK ?= clipdisk
@@ -72,7 +72,7 @@ sign: app
 		$(APP_BUNDLE)
 
 dmg: sign
-	hdiutil create -volname "$(APP_NAME)" -srcfolder "$(APP_BUNDLE)" \
+	hdiutil create -volname "$(EXECUTABLE_NAME)" -srcfolder "$(APP_BUNDLE)" \
 		-ov -format UDZO "$(DMG_FILE)"
 	codesign --force --timestamp \
 		--sign "$(CODESIGN_IDENTITY)" \
