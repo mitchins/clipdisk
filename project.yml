@@ -1,0 +1,47 @@
+name: ClipboardFolder
+options:
+  bundleIdPrefix: com.mitchellcurrie
+configs:
+  Debug: debug
+  Release: release
+settings:
+  MARKETING_VERSION: $(MARKETING_VERSION)
+  CURRENT_PROJECT_VERSION: $(CURRENT_PROJECT_VERSION)
+targets:
+  ClipboardFolderApp:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/ClipboardFolder
+    resources:
+      - Sources/ClipboardFolder/Assets.xcassets
+    info:
+      path: Resources/Info.plist
+    entitlements:
+      path: Resources/ClipboardFolder.entitlements
+    dependencies:
+      - package: ClipboardFolder
+        product: ClipboardFolderUI
+      - package: ClipboardFolder
+        product: ClipboardFolderCore
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.mitchellcurrie.clipboard-folder
+      CODE_SIGN_STYLE: Automatic
+      # Team ID is not hardcoded
+schemes:
+  ClipboardFolder:
+    build:
+      targets:
+        ClipboardFolderApp: all
+    run:
+      config: Debug
+      targets:
+        - ClipboardFolderApp
+    archive:
+      config: Release
+      targets:
+        - ClipboardFolderApp
+packages:
+  ClipboardFolder:
+    path: .

@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "ClipboardFolder",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     targets: [
         .target(
             name: "ClipboardFolderCore",
@@ -38,3 +38,4 @@ let package = Package(
         ),
     ]
 )
+

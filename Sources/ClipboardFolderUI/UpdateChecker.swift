@@ -12,7 +12,7 @@ final class UpdateChecker: ObservableObject {
         case failed(String)
     }
 
-    private let apiURL = URL(string: "https://api.github.com/repos/mitchins/clipboard-fs/releases/latest")!
+    private let apiURL = URL(string: "https://api.github.com/repos/mitchins/clipdisk/releases/latest")!
 
     func check(current: String) {
         if case .checking = state { return }

@@ -16,6 +16,10 @@ Resources/VolumeIcon.iconset/
 # macOS
 .DS_Store
 ._*
+!Resources/FinderTemplate/.DS_Store
+
+# Temporary demo captures
+Demo*.mov
 
 # SwiftLint
 .swiftlint.cache

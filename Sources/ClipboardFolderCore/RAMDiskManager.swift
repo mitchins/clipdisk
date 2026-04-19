@@ -52,6 +52,7 @@ public final class RAMDiskManager {
         guard let device = parseHdiutilInfo(result.output) else { return false }
         self.devicePath = device
         try? setVolumeIcon()
+        try? seedFinderTemplateIfAvailable()
         return true
     }
 
@@ -91,6 +92,7 @@ public final class RAMDiskManager {
 
         // Set custom volume icon if available
         try? setVolumeIcon()
+        try? seedFinderTemplateIfAvailable()
     }
 
     /// Sets a custom volume icon by copying .VolumeIcon.icns and setting the custom icon bit.
@@ -132,6 +134,79 @@ public final class RAMDiskManager {
             executablePath: "/usr/bin/touch",
             arguments: [mountPoint]
         )
+    }
+
+    /// Copies optional Finder template files (`.DS_Store` and `.background/`) to the mounted volume.
+    /// This allows DMG-style window background/layout customization for the RAM disk in Finder.
+    func seedFinderTemplateIfAvailable() throws {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: mountPoint) else { return }
+        guard let templateDir = finderTemplateDirectoryURL() else { return }
+
+        let dsStoreURL = templateDir.appendingPathComponent(".DS_Store")
+        let backgroundURL = templateDir.appendingPathComponent(".background", isDirectory: true)
+        let mountURL = URL(fileURLWithPath: mountPoint, isDirectory: true)
+
+        if fileManager.fileExists(atPath: backgroundURL.path) {
+            let targetBackgroundURL = mountURL.appendingPathComponent(".background", isDirectory: true)
+            if fileManager.fileExists(atPath: targetBackgroundURL.path) {
+                try fileManager.removeItem(at: targetBackgroundURL)
+            }
+            try fileManager.copyItem(at: backgroundURL, to: targetBackgroundURL)
+        }
+
+        if fileManager.fileExists(atPath: dsStoreURL.path) {
+            let targetDSStoreURL = mountURL.appendingPathComponent(".DS_Store")
+            if fileManager.fileExists(atPath: targetDSStoreURL.path) {
+                try fileManager.removeItem(at: targetDSStoreURL)
+            }
+            try fileManager.copyItem(at: dsStoreURL, to: targetDSStoreURL)
+            _ = try? processExecutor.run(
+                executablePath: "/usr/bin/touch",
+                arguments: [mountPoint]
+            )
+        }
+
+        seedReadme(in: mountURL)
+    }
+
+    /// Writes a plain-text README to the volume root so the folder is self-explanatory
+    /// when empty. The file disappears naturally the first time clipboard content is written.
+    private func seedReadme(in mountURL: URL) {
+        let readmeURL = mountURL.appendingPathComponent("README.txt")
+        guard !FileManager.default.fileExists(atPath: readmeURL.path) else { return }
+        let text = """
+            Clipboard  —  ClipboardFolder
+            ==============================
+            This folder is your live clipboard.
+
+            Anything you copy — text, images, links, or files — appears here
+            automatically and can be opened, dragged, or shared like any file.
+
+            Contents are stored in RAM and clear when you restart.
+            """
+        try? text.write(to: readmeURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Finds bundled `FinderTemplate` resources for .app or local dev execution.
+    func finderTemplateDirectoryURL() -> URL? {
+        let bundle = Bundle.main
+
+        if let templateURL = bundle.url(forResource: "FinderTemplate", withExtension: nil),
+           FileManager.default.fileExists(atPath: templateURL.path) {
+            return templateURL
+        }
+
+        if let execPath = bundle.executablePath {
+            let resourcesPath = (execPath as NSString).deletingLastPathComponent
+                + "/../Resources/FinderTemplate"
+            let resolvedURL = URL(fileURLWithPath: resourcesPath).standardizedFileURL
+            if FileManager.default.fileExists(atPath: resolvedURL.path) {
+                return resolvedURL
+            }
+        }
+
+        return nil
     }
 
     /// Detaches the RAM disk.

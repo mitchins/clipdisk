@@ -10,17 +10,16 @@ struct ClipboardFolderApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            Image("MenuBarIcon")
-                .renderingMode(.original)
+            Image("MenuBarIcon", bundle: .module)
+                .renderingMode(.template)
                 .resizable()
                 .frame(width: 18, height: 18)
+                .foregroundStyle(.primary)
         }
 
-        Window("Settings", id: "settings") {
+        Settings {
             SettingsView()
                 .environmentObject(appState)
         }
-        .windowResizability(.contentSize)
-        .defaultPosition(.center)
     }
 }

@@ -1,13 +1,16 @@
 APP_NAME     = ClipboardFolder
 BUNDLE_ID    = com.mitchellcurrie.clipboard-folder
-VERSION      = 1.0.2
+VERSION      = 1.0.3
 BUILD_DIR    = .build/release
 APP_BUNDLE   = $(APP_NAME).app
 DMG_FILE     = $(APP_NAME)-$(VERSION).dmg
+OWNER_REPO   ?= mitchins/clipdisk
+HOMEBREW_TAP ?= mitchins/homebrew-tap
+HOMEBREW_CASK ?= clipdisk
 NOTARY_PROFILE ?= NotaryTool
 CODESIGN_IDENTITY ?= Developer ID Application: Mitchell Currie
 
-.PHONY: build test lint setup-hooks icon app clean run sign dmg notarize package verify-sign verify-gatekeeper release-check release
+.PHONY: build test lint setup-hooks icon app clean run sign dmg notarize package verify-sign verify-gatekeeper release-check release brew-publish
 
 build:
 	swift build -c release
@@ -36,6 +39,7 @@ app: build icon
 	cp Resources/AppIcon.icns    $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/VolumeIcon.icns $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
+	@if [ -d Resources/FinderTemplate ]; then cp -R Resources/FinderTemplate $(APP_BUNDLE)/Contents/Resources/; fi
 	@echo "Done: $(APP_BUNDLE)"
 
 run: app
@@ -76,6 +80,14 @@ release: package
 	gh release create "v$(VERSION)" "$(DMG_FILE)" \
 		--title "v$(VERSION)" \
 		--generate-notes
+
+brew-publish:
+	VERSION="$(VERSION)" \
+	DMG_FILE="$(DMG_FILE)" \
+	OWNER_REPO="$(OWNER_REPO)" \
+	TAP_REPO="$(HOMEBREW_TAP)" \
+	CASK_NAME="$(HOMEBREW_CASK)" \
+	bash Scripts/publish-homebrew-cask.sh
 
 clean:
 	swift package clean

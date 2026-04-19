@@ -16,6 +16,22 @@ public final class AppState: ObservableObject {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
     }()
 
+    static let build: String? = {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+    }()
+
+    static var versionDisplay: String {
+        if version != "dev" {
+            if let b = build, !b.isEmpty {
+                return "\(version) (\(b))"
+            } else {
+                return "\(version) (dev)"
+            }
+        } else {
+            return "dev"
+        }
+    }
+
     let ramDiskManager: RAMDiskManager
     let clipboardMonitor: ClipboardMonitor
     let contentWriter: any ContentWriting
@@ -161,3 +177,4 @@ extension AppState: ClipboardMonitorDelegate {
         }
     }
 }
+

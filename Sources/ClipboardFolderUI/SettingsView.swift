@@ -16,7 +16,7 @@ public struct SettingsView: View {
                 Text("Clipboard Folder")
                     .font(.title2)
                     .fontWeight(.semibold)
-                Text("Version \(AppState.version)")
+                Text("Version \(AppState.versionDisplay)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -51,11 +51,31 @@ public struct SettingsView: View {
             .scrollDisabled(true)
             .frame(height: 60)
 
+            // About section
+            VStack(spacing: 8) {
+                Button("About Clipboard Folder") {
+                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    let alert = NSAlert()
+                    alert.messageText = "Clipboard Folder"
+                    alert.informativeText = """
+                        Version \(AppState.versionDisplay)
+
+                        Clipboard contents on a RAM disk.
+                        https://github.com/mitchins/clipdisk
+                        """
+                    alert.alertStyle = .informational
+                    alert.runModal()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.vertical, 8)
+
             Divider()
 
             // Footer
             HStack {
-                Link("View on GitHub", destination: URL(string: "https://github.com/mitchins/clipboard-fs")!)
+                Link("View on GitHub", destination: URL(string: "https://github.com/mitchins/clipdisk")!)
                     .font(.footnote)
             }
             .padding(.vertical, 12)

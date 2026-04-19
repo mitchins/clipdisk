@@ -2,7 +2,6 @@ import SwiftUI
 
 public struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
-    @Environment(\.openWindow) private var openWindow
 
     public init() {}
 
@@ -31,24 +30,12 @@ public struct MenuBarView: View {
             }
         }
 
-        Divider()
-
-        Toggle("Launch at Login", isOn: Binding(
-            get: { appState.launchAtLogin },
-            set: { _ in appState.toggleLaunchAtLogin() }
-        ))
-
-        Divider()
-
-        Button("Settings…") {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-            openWindow(id: "settings")
+        SettingsLink {
+            Text("Settings & Info…")
         }
         .keyboardShortcut(",")
 
-        Button("About Clipboard Folder") {
-            showAbout()
-        }
+        Divider()
 
         Button("Eject & Quit") {
             appState.ejectAndQuit()
@@ -60,19 +47,5 @@ public struct MenuBarView: View {
         let count = appState.fileCount
         let size = ByteCountFormatter.string(fromByteCount: appState.usedBytes, countStyle: .file)
         return "Clear \(count) item\(count == 1 ? "" : "s") (\(size))"
-    }
-
-    private func showAbout() {
-        NSApplication.shared.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        alert.messageText = "Clipboard Folder"
-        alert.informativeText = """
-            Version \(AppState.version)
-
-            Clipboard contents on a RAM disk.
-            https://github.com/mitchins/clipboard-fs
-            """
-        alert.alertStyle = .informational
-        alert.runModal()
     }
 }
