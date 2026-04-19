@@ -10,7 +10,7 @@ struct ClipboardFolderApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            Image("MenuBarIcon", bundle: .main)
+            Image("MenuBarIcon", bundle: Self.menuBarIconBundle)
                 .renderingMode(.template)
                 .resizable()
                 .frame(width: 18, height: 18)
@@ -21,5 +21,13 @@ struct ClipboardFolderApp: App {
             SettingsView()
                 .environmentObject(appState)
         }
+    }
+
+    private static var menuBarIconBundle: Bundle {
+        #if SWIFT_PACKAGE
+        .module
+        #else
+        .main
+        #endif
     }
 }
