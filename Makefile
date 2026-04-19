@@ -1,7 +1,7 @@
 APP_NAME        = ClipboardFolder
 EXECUTABLE_NAME = ClipDisk
 BUNDLE_ID       = com.mitchellcurrie.clipboard-folder
-VERSION         = 1.1.3
+VERSION         = 1.1.4
 BUILD_DIR       = .build/release
 APP_BUNDLE      = $(EXECUTABLE_NAME).app
 DMG_FILE     = $(EXECUTABLE_NAME)-$(VERSION).dmg

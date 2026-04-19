@@ -3,17 +3,20 @@ import SwiftUI
 public struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var updater = UpdateChecker()
+    private let appIcon: NSImage
 
-    public init() {}
+    public init(appIcon: NSImage) {
+        self.appIcon = appIcon
+    }
 
     public var body: some View {
         VStack(spacing: 0) {
             // App identity
             VStack(spacing: 8) {
-                Image(nsImage: NSApp.applicationIconImage)
+                Image(nsImage: appIcon)
                     .resizable()
                     .frame(width: 64, height: 64)
-                Text("Clipboard Folder")
+                Text("ClipDisk")
                     .font(.title2)
                     .fontWeight(.semibold)
                 Text("Version \(AppState.versionDisplay)")
@@ -41,35 +44,17 @@ public struct SettingsView: View {
             Divider()
 
             // Settings
-            Form {
-                Toggle("Launch at Login", isOn: Binding(
+            HStack {
+                Text("Launch at Login")
+                Spacer()
+                Toggle("", isOn: Binding(
                     get: { appState.launchAtLogin },
                     set: { _ in appState.toggleLaunchAtLogin() }
                 ))
+                .labelsHidden()
             }
-            .formStyle(.grouped)
-            .scrollDisabled(true)
-            .frame(height: 60)
-
-            // About section
-            VStack(spacing: 8) {
-                Button("About Clipboard Folder") {
-                    NSApplication.shared.activate(ignoringOtherApps: true)
-                    let alert = NSAlert()
-                    alert.messageText = "Clipboard Folder"
-                    alert.informativeText = """
-                        Version \(AppState.versionDisplay)
-
-                        Clipboard contents on a RAM disk.
-                        https://github.com/mitchins/clipdisk
-                        """
-                    alert.alertStyle = .informational
-                    alert.runModal()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
 
             Divider()
 

@@ -21,7 +21,7 @@ struct ClipboardFolderApp: App {
         }
 
         Settings {
-            SettingsView()
+            SettingsView(appIcon: Self.settingsIconImage)
                 .environmentObject(appState)
         }
     }
@@ -79,6 +79,19 @@ struct ClipboardFolderApp: App {
         }
 
         return nil
+    }
+
+    private static var settingsIconImage: NSImage {
+        guard let image = loadMenuBarIcon() else {
+            let message = "MenuBarIcon resource not found for settings view"
+            logger.error("\(message)")
+            assertionFailure(message)
+            return NSImage()
+        }
+        guard let settings = image.copy() as? NSImage else { return image }
+        settings.isTemplate = false
+        settings.size = NSSize(width: 64, height: 64)
+        return settings
     }
 
     private static func configuredMenuBarIcon(_ image: NSImage) -> NSImage {
