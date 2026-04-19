@@ -11,6 +11,16 @@ DerivedData/
 ClipboardFolder.app/
 ClipboardFolder-*.dmg
 ClipboardFolder-*.zip
+
+# ClipDisk / built artifacts
+ClipDisk.app/
+ClipDisk-*.dmg
+ClipDisk-*.zip
+
+# Generic artifacts (avoid committing generated bundles / packages)
+*.app
+*.dmg
+*.zip
 Resources/VolumeIcon.iconset/
 
 # macOS
