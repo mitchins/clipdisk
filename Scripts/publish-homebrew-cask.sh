@@ -71,7 +71,7 @@ end
 EOF
 
 cd "$TAP_DIR"
-if git diff --quiet -- "$CASK_PATH"; then
+if [[ -z "$(git status --porcelain --untracked-files=all -- "$CASK_PATH")" ]]; then
   echo "No Homebrew cask changes detected for $CASK_NAME"
   exit 0
 fi
