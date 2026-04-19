@@ -17,7 +17,13 @@ Clipboard content lives on a RAM disk. Nothing touches your real disk. It vanish
 
 ## Install
 
-Recommended (release DMG):
+Homebrew cask (recommended):
+
+```sh
+brew install --cask mitchins/tap/clipdisk
+```
+
+Release DMG:
 
 1. Download the latest `ClipboardFolder-<version>.dmg` from GitHub Releases
 2. Open the DMG and drag `ClipboardFolder.app` into Applications
@@ -45,11 +51,7 @@ The menu bar dropdown shows what's on the volume and lets you open Finder, clear
 
 ## Finder Appearance (Optional)
 
-`/Volumes/Clipboard` is styled out of the box with Finder metadata and background artwork so it behaves more like a polished DMG window when you open it in Finder.
-
-The app seeds the bundled Finder template automatically on mount, so there is nothing to configure for normal use.
-
-If the template assets are ever missing from the bundle, the app still works normally.
+`/Volumes/Clipboard` is styled out of the box in Finder.
 
 ## License
 
