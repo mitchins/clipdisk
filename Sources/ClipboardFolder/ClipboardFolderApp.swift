@@ -10,7 +10,7 @@ struct ClipboardFolderApp: App {
             MenuBarView()
                 .environmentObject(appState)
         } label: {
-            Image("MenuBarIcon", bundle: .module)
+            Image("MenuBarIcon", bundle: .main)
                 .renderingMode(.template)
                 .resizable()
                 .frame(width: 18, height: 18)

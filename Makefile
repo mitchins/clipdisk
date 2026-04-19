@@ -1,6 +1,6 @@
 APP_NAME     = ClipboardFolder
 BUNDLE_ID    = com.mitchellcurrie.clipboard-folder
-VERSION      = 1.0.4
+VERSION      = 1.0.5
 BUILD_DIR    = .build/release
 APP_BUNDLE   = $(APP_NAME).app
 DMG_FILE     = $(APP_NAME)-$(VERSION).dmg
@@ -38,7 +38,9 @@ app: build icon
 	cp Resources/Info.plist $(APP_BUNDLE)/Contents/
 	cp Resources/AppIcon.icns    $(APP_BUNDLE)/Contents/Resources/
 	cp Resources/VolumeIcon.icns $(APP_BUNDLE)/Contents/Resources/
-	cp Resources/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
+	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon.png $(APP_BUNDLE)/Contents/Resources/
+	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@2x.png $(APP_BUNDLE)/Contents/Resources/
+	cp Sources/ClipboardFolder/Assets.xcassets/MenuBarIcon.imageset/MenuBarIcon@3x.png $(APP_BUNDLE)/Contents/Resources/
 	@if [ -d Resources/FinderTemplate ]; then cp -R Resources/FinderTemplate $(APP_BUNDLE)/Contents/Resources/; fi
 	@echo "Done: $(APP_BUNDLE)"
 
